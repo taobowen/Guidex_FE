@@ -1,58 +1,81 @@
-import react, { useState, useEffect } from 'react';
-import BottomNavigation from '@mui/material/BottomNavigation';
-import BottomNavigationAction from '@mui/material/BottomNavigationAction';
-import AccountBoxIcon from '@mui/icons-material/AccountBox';
-import AddCircleIcon from '@mui/icons-material/AddCircle';
-import GridViewIcon from '@mui/icons-material/GridView';
-import Grid from '@mui/material/Grid2';
-import { Slot } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet } from 'react-native';
+import { BottomNavigation } from 'react-native-paper';
+import { Slot, useRouter, usePathname } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context'; // Import SafeAreaView
 
 export default function PageLayout() {
-    const [value, setValue] = useState(0);
+  const router = useRouter();
+  const pathname = usePathname();
 
-    useEffect(() => {
-        if (window.location.pathname === '/page/video') {
-            setValue(0);
-        }
-        if (window.location.pathname === '/page/records') {
-            setValue(1);
-        }
-        if (window.location.pathname === '/page/profile') {
-            setValue(2);
-        }
-    }, []);
+  const [index, setIndex] = useState(0);
 
-    const handleBottomNavigationChange = (_event: any, newValue: number) => {
-        if (newValue === 0) {
-            window.location.href = '/page/video';
-        }
-        if (newValue === 1) {
-            window.location.href = '/page/records';
-        }
-        if (newValue === 2) {
-            window.location.href = '/page/profile';
-        }
-    };
-    return (
-        <Grid container direction="column" spacing={5} height={'100vh'}  sx={{
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}>
-            <Grid overflow={'scroll'} size='auto'>
-                <Slot />
-            </Grid>
-            
-            <Grid width={'100%'} >
-                <BottomNavigation
-                    showLabels
-                    value={value}
-                    onChange={handleBottomNavigationChange}
-                >
-                    <BottomNavigationAction label="Video" icon={<AddCircleIcon />} />
-                    <BottomNavigationAction label="Records" icon={<GridViewIcon />} />
-                    <BottomNavigationAction label="Profile" icon={<AccountBoxIcon />} />
-                </BottomNavigation>
-            </Grid>
-        </Grid>
-    );
+  const routes = [
+    { key: 'video', title: 'Video', icon: 'video-plus' },
+    { key: 'records', title: 'Records', icon: 'view-grid' },
+    { key: 'profile', title: 'Profile', icon: 'account-box' },
+  ];
+
+  useEffect(() => {
+    if (pathname.includes('/page/video')) setIndex(0);
+    else if (pathname.includes('/page/records')) setIndex(1);
+    else if (pathname.includes('/page/profile')) setIndex(2);
+  }, [pathname]);
+
+  const handleIndexChange = (newIndex: number) => {
+    setIndex(newIndex);
+    const selected = routes[newIndex].key;
+    const validPaths = `/page/${selected}` as '/page/video' | '/page/records' | '/page/profile';
+    router.push(validPaths);
+  };
+
+  return (
+    <SafeAreaView style={styles.container}> {/* Use SafeAreaView here */}
+      <View style={styles.content}>
+        <Slot /> {/* This handles nested routing */}
+      </View>
+
+      <BottomNavigation
+        navigationState={{ index, routes }}
+        onIndexChange={handleIndexChange}
+        style={styles.nav}
+        renderScene={({ route }) => {
+          switch (route.key) {
+            case 'video':
+              return <View style={{ flex: 1, backgroundColor: '#ffebee' }} />;
+            case 'records':
+              return <View style={{ flex: 1, backgroundColor: '#e3f2fd' }} />;
+            case 'profile':
+              return <View style={{ flex: 1, backgroundColor: '#ede7f6' }} />;
+            default:
+              return null;
+          }
+        }}
+        barStyle={styles.navBar}
+        shifting={false}
+      />
+    </SafeAreaView>
+  );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    backgroundColor: '#fff',
+  },
+  content: {
+    flex: 1,
+    // paddingBottom: 80, // make room for bottom nav
+  },
+  navBar: {
+    backgroundColor: '#f6f6f6',
+  },
+  nav: {
+    flexGrow: 0,
+    flexShrink: 0,
+    flexBasis: 80,
+    height: 80,
+  },
+});

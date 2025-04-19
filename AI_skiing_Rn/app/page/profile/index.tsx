@@ -1,53 +1,85 @@
-import React from "react";
-import { Avatar, Box, Button, Card, CardContent, Typography } from "@mui/material";
-import Grid from "@mui/material/Grid2";
+import React from 'react';
+import { View, StyleSheet, Image } from 'react-native';
+import { Card, Text, Button, Avatar } from 'react-native-paper';
+import { useRouter } from 'expo-router';
 
 const ProfilePage = () => {
+
+  const router = useRouter();
+  const handleLogout = () => {
+    // Handle logout logic here
+    router.push('/auth/signIn');
+  };
   return (
-    <Grid
-        container
-        direction={"column"}
-      sx={{
-        display: "flex",
-        justifyContent: "space-around",
-        alignItems: "center",
-        height: "80vh",
-      }}
-    >
-        <Grid>
-        <Card sx={{ width: 350, p: 3, textAlign: "center", borderRadius: 3 }}>
+    <View style={styles.container}>
+      <Card style={styles.card}>
         {/* Avatar */}
-        <Avatar
-          src="https://via.placeholder.com/150"
-          alt="Profile Picture"
-          sx={{ width: 100, height: 100, margin: "0 auto" }}
-        />
+        <View style={styles.avatarContainer}>
+          <Avatar.Image
+            size={100}
+            source={{ uri: 'https://via.placeholder.com/150' }}
+          />
+        </View>
 
         {/* User Details */}
-        <CardContent>
-          <Typography variant="h5" fontWeight="bold">
+        <Card.Content style={styles.content}>
+          <Text variant="titleLarge" style={styles.name}>
             John Doe
-          </Typography>
-          <Typography variant="body1" color="textSecondary">
+          </Text>
+          <Text variant="bodyMedium" style={styles.detail}>
             Age: 28
-          </Typography>
-          <Typography variant="body1" color="textSecondary">
+          </Text>
+          <Text variant="bodyMedium" style={styles.detail}>
             Sex: Male
-          </Typography>
-        </CardContent>
-
-        {/* Logout Button */}
-      
+          </Text>
+        </Card.Content>
       </Card>
-        </Grid>
-      
-      <Grid>
-        <Button variant="contained" color="error" fullWidth sx={{ mt: 2 }}>
-            Log Out
-        </Button>
-      </Grid>
-    </Grid>
+
+      {/* Logout Button */}
+      <Button
+        mode="contained"
+        buttonColor="#d32f2f"
+        style={styles.logoutButton}
+        onPress={handleLogout}
+      >
+        Log Out
+      </Button>
+    </View>
   );
 };
 
 export default ProfilePage;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: 20,
+    backgroundColor: '#f6f6f6',
+  },
+  card: {
+    width: 350,
+    padding: 24,
+    borderRadius: 16,
+    alignItems: 'center',
+  },
+  avatarContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  content: {
+    alignItems: 'center',
+  },
+  name: {
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  detail: {
+    color: '#666',
+  },
+  logoutButton: {
+    width: 350,
+    marginTop: 16,
+  },
+});

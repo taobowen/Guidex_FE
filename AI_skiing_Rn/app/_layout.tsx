@@ -1,8 +1,13 @@
-import { Stack } from 'expo-router';
-import react from 'react';
+import { useEffect } from 'react';
+import { Slot, useRouter } from 'expo-router';
 
 export default function RootLayout() {
-  return  (
-    <Stack />
-  );
+  const router = useRouter();
+
+  useEffect(() => {
+    // Redirect to /auth/signIn on app load
+    router.replace('/auth/signIn');
+  }, []);
+
+  return <Slot />;
 }
