@@ -1,29 +1,56 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, ScrollView, Linking } from 'react-native';
 import {
   TextInput,
   Button,
-  Checkbox,
   Text,
-  Card,
   Divider,
 } from 'react-native-paper';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import axios from 'axios';
+import * as Google from 'expo-auth-session/providers/google';
+
+const themeColor = '#8fbff8'; // deep navy
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState('');
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
-  const [open, setOpen] = useState(false);
   const router = useRouter();
-  
+
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    iosClientId: '574068163299-6o9j4ng2oncdisask3hsg6qcq584p1pa.apps.googleusercontent.com',
+    androidClientId: '574068163299-6o9j4ng2oncdisask3hsg6qcq584p1pa.apps.googleusercontent.com',
+    webClientId: '574068163299-6o9j4ng2oncdisask3hsg6qcq584p1pa.apps.googleusercontent.com',
+    redirectUri: 'http://localhost:8081/auth/signIn',
+  });
+
+  useEffect(() => {
+    const subscription = Linking.addEventListener('url', (event) => {
+      const { url } = event;
+      console.log('Redirected back with URL:', url);
+    });
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const { id_token } = response.authentication!;
+      axios.post('https://your-backend.com/google-login', { idToken: id_token })
+        .then(async (res) => {
+          await AsyncStorage.setItem('authToken', res.data.token);
+          router.push('/page/video');
+        })
+        .catch((err) => {
+          console.error('Login failed', err);
+        });
+    }
+  }, [response]);
 
   const validateInputs = () => {
     let isValid = true;
-
     if (!email || !/\S+@\S+\.\S+/.test(email)) {
       setEmailError('Please enter a valid email address.');
       isValid = false;
@@ -44,129 +71,146 @@ export default function SignIn() {
   const handleSubmit = () => {
     if (!validateInputs()) return;
 
-    console.log({
-      email,
-      password,
-    });
-
-    router.push('/page/video');
+    axios.post('https://aiskiingcoach.com/login', { email, password })
+      .then(({ data }) => {
+        if (data.code === 500) {
+          alert('Invalid email or password');
+          return;
+        }
+        AsyncStorage.setItem('authToken', data.token).then(() => {
+          router.push('/page/video');
+        });
+      });
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Card style={styles.card}>
-        <Card.Title title="Sign In" titleStyle={styles.title} />
-        <Card.Content>
-          <TextInput
-            label="Email"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            mode="outlined"
-            error={!!emailError}
-          />
-          {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
+    <ScrollView contentContainerStyle={styles.signIn_container}>
+      <Text style={styles.signIn_title}>Sign In</Text>
 
-          <TextInput
-            label="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            mode="outlined"
-            error={!!passwordError}
-            style={styles.input}
-          />
-          {passwordError ? (
-            <Text style={styles.errorText}>{passwordError}</Text>
-          ) : null}
+      <TextInput
+        label="Email"
+        value={email}
+        onChangeText={setEmail}
+        autoCapitalize="none"
+        keyboardType="email-address"
+        mode="outlined"
+        error={!!emailError}
+        theme={{ colors: { primary: themeColor } }}
+        style={styles.signIn_input}
+      />
+      {emailError ? <Text style={styles.signIn_errorText}>{emailError}</Text> : null}
 
-          <View style={styles.checkboxContainer}>
-            <Checkbox
-              status={rememberMe ? 'checked' : 'unchecked'}
-              onPress={() => setRememberMe(!rememberMe)}
-            />
-            <Text style={styles.checkboxLabel}>Remember me</Text>
-          </View>
+      <TextInput
+        label="Password"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+        mode="outlined"
+        error={!!passwordError}
+        style={styles.signIn_input}
+        theme={{ colors: { primary: themeColor } }}
+      />
+      {passwordError ? <Text style={styles.signIn_errorText}>{passwordError}</Text> : null}
 
-          {/* ForgotPassword logic would go here */}
-          <Button mode="contained" onPress={handleSubmit} style={styles.submit}>
-            Sign In
-          </Button>
+      <Button
+        mode="text"
+        onPress={() => router.push('/auth/reset')}
+        compact
+        style={styles.signIn_forgotPassword}
+        textColor={themeColor}
+      >
+        Forgot your password?
+      </Button>
 
-          <Button
-            mode="text"
-            onPress={() => setOpen(true)}
-            compact
-            style={{ alignSelf: 'center' }}
-          >
-            Forgot your password?
-          </Button>
+      <Button
+        mode="contained"
+        onPress={handleSubmit}
+        style={styles.signIn_signIn}
+        buttonColor={themeColor}
+        textColor="#fff"
+      >
+        Sign In
+      </Button>
 
-          <Divider style={{ marginVertical: 16 }} />
+    
 
-          <Button
-            mode="outlined"
-            onPress={() => alert('Sign in with Google')}
-          >
-            Sign in with Google
-          </Button>
+      <Divider style={{ marginVertical: 16, backgroundColor: '#ccc' }} />
 
-          <Text style={styles.footerText}>
-            Don’t have an account?{' '}
-            <Text
-              style={styles.linkText}
-              onPress={() => router.push('/auth/signUp')}
-            >
-              Sign up
-            </Text>
-          </Text>
-        </Card.Content>
-      </Card>
+      <Button
+        mode="outlined"
+        onPress={() => promptAsync()}
+        disabled={!request}
+        textColor={themeColor}
+        style={styles.signIn_outlinedBtn}
+      >
+        Sign in with Google
+      </Button>
+
+      <Button
+        mode="outlined"
+        onPress={() => router.push('/auth/signUp')}
+        disabled={!request}
+        textColor={themeColor}
+        style={styles.signIn_signUp}
+      >
+        Sign up
+      </Button>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 16,
+  signIn_container: {
+    padding: 20,
     flexGrow: 1,
     justifyContent: 'center',
-    backgroundColor: '#f6f6f6',
+    backgroundColor: '#ffffff',
   },
-  card: {
-    padding: 16,
-    elevation: 4,
-  },
-  title: {
-    fontSize: 24,
+  signIn_title: {
+    fontSize: 28,
+    color: themeColor,
     textAlign: 'center',
+    marginBottom: 24,
+    fontWeight: '700',
   },
-  input: {
-    marginTop: 12,
+  signIn_input: {
+    marginTop: 16,
+    height: 40,
+    backgroundColor: '#fff',
   },
-  checkboxContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 12,
+  signIn_submit: {
+    marginTop: 24,
+    paddingVertical: 6,
+    borderRadius: 4,
   },
-  checkboxLabel: {
-    fontSize: 16,
+  signIn_outlinedBtn: {
+    borderColor: themeColor,
   },
-  submit: {
-    marginVertical: 12,
-  },
-  errorText: {
-    color: 'red',
+  signIn_errorText: {
+    color: '#ff6b6b',
     fontSize: 12,
     marginTop: 4,
   },
-  footerText: {
-    marginTop: 16,
+  signIn_footerText: {
+    marginTop: 20,
     textAlign: 'center',
+    color: '#444',
   },
-  linkText: {
-    color: '#1e88e5',
+  signIn_linkText: {
+    color: themeColor,
+    fontWeight: '600',
     textDecorationLine: 'underline',
   },
+  signIn_forgotPassword: {
+    alignSelf: 'flex-end',
+    marginTop: 8,
+  },
+  signIn_signUp: {
+    marginTop: 16,
+    borderColor: themeColor,
+  },
+  signIn_signIn: {
+    marginTop: 16,
+  },
 });
+

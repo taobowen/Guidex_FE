@@ -3,20 +3,19 @@ import { View, StyleSheet, ScrollView } from 'react-native';
 import {
   TextInput,
   Button,
-  Checkbox,
   Text,
-  Card,
   Divider,
-  useTheme,
 } from 'react-native-paper';
+import axios from 'axios';
+import { useRouter } from 'expo-router';
+
+const themeColor = '#8fbff8';
 
 export default function SignUp() {
-  const theme = useTheme();
-
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [subscribe, setSubscribe] = useState(false);
+  const router = useRouter();
 
   const [nameError, setNameError] = useState('');
   const [emailError, setEmailError] = useState('');
@@ -52,143 +51,138 @@ export default function SignUp() {
   const handleSubmit = () => {
     if (!validateInputs()) return;
 
-    console.log({
-      name,
+    axios.post('https://aiskiingcoach.com/register', {
+      username: name,
       email,
       password,
-      subscribe,
+    }).then(({ data }) => {
+      if (data.code === 500) {
+        alert('User already exists');
+      }
+      if (data.code === 200) {
+        alert('User created successfully');
+        router.push('/auth/signIn');
+      }
     });
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Card style={styles.card}>
-        <Card.Title title="Sign Up" titleStyle={styles.title} />
-        <Card.Content>
-          <TextInput
-            label="Full Name"
-            value={name}
-            onChangeText={setName}
-            autoCapitalize="words"
-            mode="outlined"
-            error={!!nameError}
-          />
-          {nameError ? <Text style={styles.error}>{nameError}</Text> : null}
+    <ScrollView contentContainerStyle={styles.signUp_container}>
+      <Text style={styles.signUp_title}>Sign Up</Text>
 
-          <TextInput
-            label="Email"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            mode="outlined"
-            error={!!emailError}
-            style={styles.input}
-          />
-          {emailError ? <Text style={styles.error}>{emailError}</Text> : null}
+      <TextInput
+        label="Full Name"
+        value={name}
+        onChangeText={setName}
+        autoCapitalize="words"
+        mode="outlined"
+        error={!!nameError}
+        style={styles.signUp_input}
+        theme={{ colors: { primary: themeColor } }}
+      />
+      {nameError ? <Text style={styles.signUp_error}>{nameError}</Text> : null}
 
-          <TextInput
-            label="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            mode="outlined"
-            error={!!passwordError}
-            style={styles.input}
-          />
-          {passwordError ? (
-            <Text style={styles.error}>{passwordError}</Text>
-          ) : null}
+      <TextInput
+        label="Email"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        mode="outlined"
+        error={!!emailError}
+        style={styles.signUp_input}
+        theme={{ colors: { primary: themeColor } }}
+      />
+      {emailError ? <Text style={styles.signUp_error}>{emailError}</Text> : null}
 
-          <View style={styles.checkboxContainer}>
-            <Checkbox
-              status={subscribe ? 'checked' : 'unchecked'}
-              onPress={() => setSubscribe(!subscribe)}
-            />
-            <Text style={styles.checkboxLabel}>
-              I want to receive updates via email.
-            </Text>
-          </View>
+      <TextInput
+        label="Password"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+        mode="outlined"
+        error={!!passwordError}
+        style={styles.signUp_input}
+        theme={{ colors: { primary: themeColor } }}
+      />
+      {passwordError ? (
+        <Text style={styles.signUp_error}>{passwordError}</Text>
+      ) : null}
 
-          <Button
-            mode="contained"
-            onPress={handleSubmit}
-            style={styles.submitBtn}
-          >
-            Sign Up
-          </Button>
+      <Button
+        mode="contained"
+        onPress={handleSubmit}
+        style={styles.signUp_submitBtn}
+        buttonColor={themeColor}
+        textColor="#fff"
+      >
+        Sign Up
+      </Button>
 
-          <Divider style={styles.divider} />
+      <Divider style={styles.signUp_divider} />
 
-          <Button
-            mode="outlined"
-            onPress={() => alert('Sign up with Google')}
-            icon="google"
-            style={styles.googleBtn}
-          >
-            Sign up with Google
-          </Button>
+      <Button
+        mode="outlined"
+        onPress={() => alert('Sign up with Google')}
+        icon="google"
+        style={styles.signUp_googleBtn}
+        textColor={themeColor}
+      >
+        Sign up with Google
+      </Button>
 
-          <Text style={styles.footerText}>
-            Already have an account?{' '}
-            <Text
-              onPress={() => alert('Navigate to Sign In')}
-              style={styles.linkText}
-            >
-              Sign in
-            </Text>
-          </Text>
-        </Card.Content>
-      </Card>
+      <Text style={styles.signUp_footerText}>
+        Already have an account?{' '}
+        <Text
+          onPress={() => router.push('/auth/signIn')}
+          style={styles.signUp_linkText}
+        >
+          Sign in
+        </Text>
+      </Text>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  signUp_container: {
     padding: 16,
     flexGrow: 1,
     justifyContent: 'center',
     backgroundColor: '#f6f6f6',
   },
-  card: {
-    padding: 16,
-    elevation: 4,
-  },
-  title: {
-    fontSize: 24,
+  signUp_title: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: themeColor,
     textAlign: 'center',
+    marginBottom: 20,
   },
-  input: {
+  signUp_input: {
     marginTop: 12,
+    backgroundColor: '#fff',
   },
-  checkboxContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  signUp_submitBtn: {
     marginVertical: 12,
   },
-  checkboxLabel: {
-    fontSize: 16,
-    flexShrink: 1,
-  },
-  submitBtn: {
-    marginVertical: 12,
-  },
-  googleBtn: {
+  signUp_googleBtn: {
     marginTop: 12,
+    borderColor: themeColor,
+    borderWidth: 1.4,
   },
-  divider: {
+  signUp_divider: {
     marginVertical: 16,
   },
-  footerText: {
+  signUp_footerText: {
     textAlign: 'center',
     marginTop: 16,
   },
-  linkText: {
-    color: '#1e88e5',
+  signUp_linkText: {
+    color: themeColor,
     textDecorationLine: 'underline',
+    fontWeight: '600',
   },
-  error: {
+  signUp_error: {
     color: 'red',
     fontSize: 12,
     marginTop: 4,

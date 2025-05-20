@@ -2,18 +2,32 @@ import React, { useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { BottomNavigation } from 'react-native-paper';
 import { Slot, useRouter, usePathname } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context'; // Import SafeAreaView
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function PageLayout() {
   const router = useRouter();
   const pathname = usePathname();
-
   const [index, setIndex] = useState(0);
 
+  // const themeColor = '#001c3c';
+  const themeColor = '#8fbff8'; // deep navy
+
   const routes = [
-    { key: 'video', title: 'Video', icon: 'video-plus' },
-    { key: 'records', title: 'Records', icon: 'view-grid' },
-    { key: 'profile', title: 'Profile', icon: 'account-box' },
+    {
+      key: 'video',
+      title: 'Video',
+      focusedIcon: 'video', unfocusedIcon: 'video-outline',
+    },
+    {
+      key: 'records',
+      title: 'Records',
+      focusedIcon: 'view-list', unfocusedIcon: 'view-list-outline'
+    },
+    {
+      key: 'profile',
+      title: 'Profile',
+      focusedIcon: 'account-circle', unfocusedIcon: 'account-circle-outline'
+    },
   ];
 
   useEffect(() => {
@@ -30,29 +44,21 @@ export default function PageLayout() {
   };
 
   return (
-    <SafeAreaView style={styles.container}> {/* Use SafeAreaView here */}
+    <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Slot /> {/* This handles nested routing */}
+        <Slot />
       </View>
 
       <BottomNavigation
         navigationState={{ index, routes }}
         onIndexChange={handleIndexChange}
         style={styles.nav}
-        renderScene={({ route }) => {
-          switch (route.key) {
-            case 'video':
-              return <View style={{ flex: 1, backgroundColor: '#ffebee' }} />;
-            case 'records':
-              return <View style={{ flex: 1, backgroundColor: '#e3f2fd' }} />;
-            case 'profile':
-              return <View style={{ flex: 1, backgroundColor: '#ede7f6' }} />;
-            default:
-              return null;
-          }
-        }}
         barStyle={styles.navBar}
         shifting={false}
+        activeIndicatorStyle={{ backgroundColor: '#fff' }}
+        activeColor={themeColor}
+        inactiveColor='#666'
+        renderScene={() => null} // We don’t render content in nav
       />
     </SafeAreaView>
   );
@@ -67,10 +73,11 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    // paddingBottom: 80, // make room for bottom nav
   },
   navBar: {
-    backgroundColor: '#f6f6f6',
+    backgroundColor: '#ffffff',
+    borderTopWidth: 1,
+    borderTopColor: '#ddd',
   },
   nav: {
     flexGrow: 0,

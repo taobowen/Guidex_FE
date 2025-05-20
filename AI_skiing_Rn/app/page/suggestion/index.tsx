@@ -1,37 +1,61 @@
 import React from 'react';
 import { ScrollView, View, Image, StyleSheet } from 'react-native';
 import { Text, Card } from 'react-native-paper';
+import { useLocalSearchParams } from 'expo-router';
+import {ISSUE_TYPES} from '@/app/utils/const';
+
+import axiosInstance from '@/app/utils/axiosInstance';
+
+const themeColor = '#8fbff8';
 
 export default function Suggestions() {
-  const suggestions = [
-    {
-      error: 'Error: Shoulder Rotation',
-      suggestion: 'Suggestion: Keep your shoulders parallel to the slope',
-      image: 'https://assets.codepen.io/6093409/river.jpg',
-    },
-    // Repeat or dynamically generate more entries as needed
-  ];
+  const [suggestions, setSuggestions] = React.useState([]);
+
+  const { resultId } = useLocalSearchParams();
+
+  const fetchSuggestions = async () => {
+    try {
+      const response = await axiosInstance.get(`/system/results/${resultId}`);
+      const data = response.data;
+      if (data.code === 200) {
+        setSuggestions(data.data.issues.map((issue) => ({
+          error: `Error: ${ISSUE_TYPES[issue.type]}`,
+          suggestion: issue.suggestion,
+          image: issue.coverUrl || 'https://via.placeholder.com/150', // Default image if none provided
+        })));
+      } else {
+        console.error('Error fetching suggestions:', data.message);
+      }
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
+    }
+  };
+
+
+  React.useEffect(() => {
+    fetchSuggestions();
+  }, []);
 
   return (
-    <View style={styles.container}>
-      <Text variant="headlineMedium" style={styles.header}>
-        Detailed Feedback
+    <View style={styles.suggestions_container}>
+      <Text variant="headlineMedium" style={styles.suggestions_header}>
+        Feedback
       </Text>
 
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {Array.from({ length: 7 }).map((_, index) => (
-          <Card key={index} style={styles.card}>
-            <View style={styles.row}>
+      <ScrollView contentContainerStyle={styles.suggestions_scrollContainer}>
+        {suggestions.map((item, index) => (
+          <Card key={index} style={styles.suggestions_card}>
+            <View style={styles.suggestions_row}>
               <Image
-                source={{ uri: suggestions[0].image }}
-                style={styles.image}
+                source={{ uri: item.image }}
+                style={styles.suggestions_image}
               />
-              <View style={styles.textContainer}>
-                <Text variant="bodyMedium" style={styles.text}>
-                  {suggestions[0].error}
+              <View style={styles.suggestions_textContainer}>
+                <Text variant="bodyMedium" style={styles.suggestions_text}>
+                  {item.error}
                 </Text>
-                <Text variant="bodyMedium" style={styles.text}>
-                  {suggestions[0].suggestion}
+                <Text variant="bodyMedium" style={styles.suggestions_text}>
+                  {item.suggestion}
                 </Text>
               </View>
             </View>
@@ -43,42 +67,48 @@ export default function Suggestions() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexShrink: 1,
+  suggestions_container: {
+    flex: 1,
     padding: 16,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#f6f6f6',
   },
-  header: {
+  suggestions_header: {
     marginBottom: 12,
     textAlign: 'center',
+    color: '#001c3c',
+    fontWeight: '600',
   },
-  scrollContainer: {
-    gap: 16,
+  suggestions_scrollContainer: {
+    gap: 32,
+    marginTop: 16,
     paddingBottom: 16,
   },
-  card: {
+  suggestions_card: {
     width: 350,
     padding: 8,
     borderRadius: 12,
     elevation: 3,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: themeColor,
   },
-  row: {
+  suggestions_row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
-  image: {
+  suggestions_image: {
     width: 120,
     height: 90,
     borderRadius: 8,
   },
-  textContainer: {
+  suggestions_textContainer: {
     flex: 1,
     gap: 4,
   },
-  text: {
-    color: '#333',
+  suggestions_text: {
+    color: '#001c3c',
   },
 });

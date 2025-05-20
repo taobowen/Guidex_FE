@@ -1,49 +1,90 @@
 import React from 'react';
-import { ScrollView, View, StyleSheet } from 'react-native';
+import { ScrollView, View, Alert, StyleSheet } from 'react-native';
 import { Card, Text, Button, ProgressBar } from 'react-native-paper';
+import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axiosInstance from '../../utils/axiosInstance';
+
+const themeColor = '#8fbff8';
 
 export default function Records() {
-  const records = Array.from({ length: 7 });
+  const router = useRouter();
+  const [recordList, setRecords] = React.useState([]);
+
+  React.useEffect(() => {
+    fetchRecords();
+  }, []);
+
+  const fetchRecords = async () => {
+    // const token = await AsyncStorage.getItem('authToken');
+    const { data } = await axiosInstance.get('/system/results/list');
+
+    if (data.code === 200) {
+      setRecords(data.rows);
+    }
+  };
+
+  const handleDelete = async (recordId: number) => {
+    const token = await AsyncStorage.getItem('authToken');
+    const { data } = await axiosInstance.delete(`https://aiskiingcoach.com/system/results/delete/${recordId}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token,
+      },
+    });
+
+    if (data.code === 200) {
+      setRecords((prev) => prev.filter((r) => r.id !== recordId));
+      Alert.alert('Success', 'Record deleted successfully!');
+    }
+  };
 
   return (
-    <View style={styles.container}>
-      <Text variant="headlineMedium" style={styles.header}>
+    <View style={styles.records_container}>
+      <Text variant="headlineMedium" style={styles.records_header}>
         Consultation Records
       </Text>
 
-      <ScrollView contentContainerStyle={styles.scrollArea}>
-        {records.map((_, index) => (
-          <Card key={index} style={styles.card}>
-            <Card.Title title={`Consultation Record ${index}`} />
+      <ScrollView contentContainerStyle={styles.records_scrollArea}>
+        {recordList.map((record, index) => (
+          <Card key={index} style={styles.records_card} onPress={() => router.push(`/page/evaluation?resultId=${record.id}&videoId=${record.videoId}`)}>
+            <Card.Title title={record.skiTitle} />
             <Card.Content>
-              <Text variant="bodyMedium" style={styles.date}>
-                1989年6月4日
+
+              { record.skiLocation && (
+                <Text variant="bodyMedium" style={styles.records_date}>
+                  {record.skiLocation}
+                </Text>
+              )}
+             
+              { record.skiTime && (
+                <Text variant="bodyMedium" style={styles.records_date}>
+                  { new Date(record.skiTime).toLocaleDateString()}
+                </Text>
+              )}
+
+              <Text variant="bodyMedium" style={styles.records_issues}>
+                {record?.resultDetailsObject?.issues?.length || 0} issues detected
               </Text>
 
-              <View>
-                <ProgressBar progress={0.8} style={styles.progressBar} />
-              </View>
-
-              <Text variant="bodyMedium" style={styles.issues}>
-                3 issues detected
-              </Text>
-
-              <View style={styles.buttonRow}>
+              <View style={styles.records_buttonRow}>
                 <Button
-                  mode="contained"
-                  buttonColor="#0288d1"
-                  onPress={() => alert(`Edit ${index}`)}
-                  style={styles.button}
+                  mode="outlined"
+                  // buttonColor={themeColor}
+                  onPress={() => router.push(`/page/records/edit?resultId=${record.id}`)}
+                  style={styles.records_button}
                   compact
+                  labelStyle={{ color: themeColor}}  
                 >
                   Edit
                 </Button>
                 <Button
                   mode="contained"
-                  buttonColor="#d32f2f"
-                  onPress={() => alert(`Delete ${index}`)}
-                  style={styles.button}
+                  buttonColor={themeColor}
+                  onPress={() => handleDelete(record.id)}
+                  style={styles.records_button}
                   compact
+                  labelStyle={{ color: '#fff' }}
                 >
                   Delete
                 </Button>
@@ -57,44 +98,43 @@ export default function Records() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  records_container: {
     flexShrink: 1,
     padding: 16,
     alignItems: 'center',
-    backgroundColor: '#f6f6f6',
+    backgroundColor: '#fff',
   },
-  header: {
+  records_header: {
     marginBottom: 12,
+    color: '#333',
     textAlign: 'center',
   },
-  scrollArea: {
+  records_scrollArea: {
     paddingBottom: 16,
     gap: 16,
   },
-  card: {
+  records_card: {
+    display: 'flex',
     width: 350,
-    marginBottom: 16,
+    marginHorizontal: 8,
     borderRadius: 12,
     elevation: 3,
+    backgroundColor: '#f6f6f6',
   },
-  date: {
+  records_date: {
     marginBottom: 8,
     color: '#666',
   },
-  progressBar: {
-    height: 8,
-    borderRadius: 4,
-    marginVertical: 8,
-  },
-  issues: {
+  records_issues: {
     marginBottom: 8,
   },
-  buttonRow: {
+  records_buttonRow: {
     flexDirection: 'row',
     gap: 12,
   },
-  button: {
+  records_button: {
     marginTop: 8,
     flex: 1,
+    borderColor: themeColor,
   },
 });
