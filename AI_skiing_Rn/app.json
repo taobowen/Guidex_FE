@@ -10,14 +10,15 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.AI-skiing-Rn"
+      "usesAppleSignIn": true,
+      "bundleIdentifier": "com.aiskiingcoach"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.AI_skiing_Rn"
+      "package": "com.aiskiingcoach"
     },
     "web": {
       "bundler": "metro",
@@ -26,6 +27,13 @@
     },
     "plugins": [
       "expo-router",
+      "expo-apple-authentication",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.574068163299-fcq1hinbg9qvlsj19p5611vgr2u8g49j"
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -52,6 +60,19 @@
       },
       "eas": {
         "projectId": "dc93e4d6-41a4-4c1b-8088-9423742820cb"
+      }
+    },
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "exclude": [
+          "react-native-create-thumbnail",
+          "@emotion/react",
+          "@emotion/styled",
+          "@fontsource/roboto",
+          "@mui/styled-engine-sc",
+          "styled-components"
+        ],
+        "listUnknownPackages": false
       }
     },
     "owner": "taobowen"

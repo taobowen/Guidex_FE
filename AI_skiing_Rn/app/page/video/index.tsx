@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, StyleSheet, Alert, Text } from 'react-native';
 import { Button, Card, Text as PaperText } from 'react-native-paper';
 import * as DocumentPicker from 'expo-document-picker';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { TouchableOpacity } from 'react-native-gesture-handler';
+import { ScrollView, TouchableOpacity } from 'react-native-gesture-handler';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import axios from 'axios';
@@ -14,9 +14,31 @@ const themeColor = '#8fbff8'; // deep navy
 export default function VideoUpload() {
   const router = useRouter();
   const [video, setVideo] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
+  const [category, setCategory] = useState('Snowboard'); // default category
+  const [standard, setStandard] = useState('');
+  const [type, setType] = useState('');
+
+  const categoryOptions = ['Snowboard', 'Ski'];
+
+  const standardOptions = useMemo(() => {
+    if (category === 'Ski') {
+      return ['General', 'CISA'];
+    } else if (category === 'Snowboard') {
+      return ['General','CASI', 'AASI', 'BASI'];
+    }
+    return [];
+  }, [category]);
+
+  const typeOptions = ['Flow', 'Carving'];
+
   const [videoName, setVideoName] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(false);
+
+  const disabledUploadBtn = useMemo(() => {
+    return !video || loading || type === '' || standard === '' || category === '';
+  }, [video, loading, type, standard, category]);
+
   let pollTimer: NodeJS.Timeout;
 
 
@@ -114,12 +136,13 @@ export default function VideoUpload() {
   
 
   return (
-    <View style={styles.videoUpload_container}>
+    <ScrollView contentContainerStyle={styles.records_scrollArea}>
       <PaperText variant="headlineMedium" style={styles.videoUpload_heading}>
         Upload Video
       </PaperText>
 
       <View style={styles.videoUpload_uploadWrapper}>
+
         <TouchableOpacity style={styles.videoUpload_uploadZone} onPress={handleFileUpload}>
           <MaterialIcons name="upload-file" size={40} color="#333" />
           <Text style={styles.videoUpload_uploadText}>Tap to Upload Video</Text>
@@ -129,6 +152,56 @@ export default function VideoUpload() {
       {videoName && (
         <Text style={styles.videoUpload_fileName}>Uploaded: {videoName}</Text>
       )}
+
+      <View style={{ width: '100%', gap: 16 }}>
+        <Text style={{ fontWeight: '600', color: '#333' }}>Category</Text>
+        <View style={styles.selectWrapper}>
+          {categoryOptions.map((opt) => (
+            <TouchableOpacity
+              key={opt}
+              onPress={() => setCategory(opt)}
+              style={[
+                styles.selectOption,
+                category === opt && styles.selectOptionSelected,
+              ]}
+            >
+              <Text style={{ color: category === opt ? '#fff' : '#333' }}>{opt}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={{ fontWeight: '600', color: '#333' }}>Standard</Text>
+        <View style={styles.selectWrapper}>
+          {standardOptions.map((opt) => (
+            <TouchableOpacity
+              key={opt}
+              onPress={() => setStandard(opt)}
+              style={[
+                styles.selectOption,
+                standard === opt && styles.selectOptionSelected,
+              ]}
+            >
+              <Text style={{ color: standard === opt ? '#fff' : '#333' }}>{opt}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={{ fontWeight: '600', color: '#333' }}>Type</Text>
+        <View style={styles.selectWrapper}>
+          {typeOptions.map((opt) => (
+            <TouchableOpacity
+              key={opt}
+              onPress={() => setType(opt)}
+              style={[
+                styles.selectOption,
+                type === opt && styles.selectOptionSelected,
+              ]}
+            >
+              <Text style={{ color: type === opt ? '#fff' : '#333' }}>{opt}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
 
       <Card style={styles.videoUpload_card}>
         <Card.Title
@@ -146,22 +219,19 @@ export default function VideoUpload() {
       <Button
         mode="contained"
         icon={loading ? 'loading' : 'video'}
-        disabled={loading || !video}
+        disabled={disabledUploadBtn}
         loading={loading}
         onPress={handleGenerateSuggestion}
         style={[
           styles.videoUpload_analyzeBtn,
-          (!video || loading) && styles.videoUpload_analyzeBtnDisabled,
+          disabledUploadBtn && styles.videoUpload_analyzeBtnDisabled,
         ]}
         contentStyle={{ height: 48 }}
         labelStyle={{ fontWeight: '600', color: '#fff' }}
       >
         {loading ? 'Analyzing...' : 'Analyze Video'}
       </Button>
-
-
-    </View>
-
+    </ScrollView>
   );
 }
 
@@ -173,6 +243,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 24,
     backgroundColor: '#ffffff',
+  },
+  records_scrollArea: {
+    marginTop: 24,
+    padding: 16,
+    gap: 16,
   },
   videoUpload_heading: {
     fontWeight: 'bold',
@@ -227,4 +302,24 @@ const styles = StyleSheet.create({
     borderColor: '#d1d1d1',
     color: '#fff',
   },
+
+  selectWrapper: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 4,
+  },
+  selectOption: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderRadius: 20,
+    borderColor: '#aaa',
+    backgroundColor: '#f0f0f0',
+  },
+  selectOptionSelected: {
+    backgroundColor: themeColor,
+    borderColor: themeColor,
+  },
+
 });

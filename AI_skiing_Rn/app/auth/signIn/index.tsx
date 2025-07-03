@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Linking } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, ScrollView } from 'react-native';
 import {
   TextInput,
   Button,
@@ -9,7 +9,8 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
-import * as Google from 'expo-auth-session/providers/google';
+import AppleLoginBtn from './AppleLoginBtn';
+import GoogleLoginBtn from './GoogleLoginBtn';
 
 const themeColor = '#8fbff8'; // deep navy
 
@@ -20,34 +21,27 @@ export default function SignIn() {
   const [passwordError, setPasswordError] = useState('');
   const router = useRouter();
 
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    iosClientId: '574068163299-6o9j4ng2oncdisask3hsg6qcq584p1pa.apps.googleusercontent.com',
-    androidClientId: '574068163299-6o9j4ng2oncdisask3hsg6qcq584p1pa.apps.googleusercontent.com',
-    webClientId: '574068163299-6o9j4ng2oncdisask3hsg6qcq584p1pa.apps.googleusercontent.com',
-    redirectUri: 'http://localhost:8081/auth/signIn',
-  });
+  // useEffect(() => {
+  //   const subscription = Linking.addEventListener('url', (event) => {
+  //     const { url } = event;
+  //     console.log('Redirected back with URL:', url);
+  //   });
+  //   return () => subscription.remove();
+  // }, []);
 
-  useEffect(() => {
-    const subscription = Linking.addEventListener('url', (event) => {
-      const { url } = event;
-      console.log('Redirected back with URL:', url);
-    });
-    return () => subscription.remove();
-  }, []);
-
-  useEffect(() => {
-    if (response?.type === 'success') {
-      const { id_token } = response.authentication!;
-      axios.post('https://your-backend.com/google-login', { idToken: id_token })
-        .then(async (res) => {
-          await AsyncStorage.setItem('authToken', res.data.token);
-          router.push('/page/video');
-        })
-        .catch((err) => {
-          console.error('Login failed', err);
-        });
-    }
-  }, [response]);
+  // useEffect(() => {
+  //   if (response?.type === 'success') {
+  //     const { id_token } = response.authentication!;
+  //     axios.post('https://your-backend.com/google-login', { idToken: id_token })
+  //       .then(async (res) => {
+  //         await AsyncStorage.setItem('authToken', res.data.token);
+  //         router.push('/page/video');
+  //       })
+  //       .catch((err) => {
+  //         console.error('Login failed', err);
+  //       });
+  //   }
+  // }, [response]);
 
   const validateInputs = () => {
     let isValid = true;
@@ -136,20 +130,14 @@ export default function SignIn() {
 
       <Divider style={{ marginVertical: 16, backgroundColor: '#ccc' }} />
 
-      <Button
-        mode="outlined"
-        onPress={() => promptAsync()}
-        disabled={!request}
-        textColor={themeColor}
-        style={styles.signIn_outlinedBtn}
-      >
-        Sign in with Google
-      </Button>
+      <GoogleLoginBtn />
+
+      <AppleLoginBtn />
 
       <Button
         mode="outlined"
         onPress={() => router.push('/auth/signUp')}
-        disabled={!request}
+        // disabled={!request}
         textColor={themeColor}
         style={styles.signIn_signUp}
       >

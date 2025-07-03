@@ -64,13 +64,12 @@ export default function Records() {
               )}
 
               <Text variant="bodyMedium" style={styles.records_issues}>
-                {record?.resultDetailsObject?.issues?.length || 0} issues detected
+                {record?.issues?.length || 0} issues detected
               </Text>
 
               <View style={styles.records_buttonRow}>
                 <Button
                   mode="outlined"
-                  // buttonColor={themeColor}
                   onPress={() => router.push(`/page/records/edit?resultId=${record.id}`)}
                   style={styles.records_button}
                   compact
@@ -105,11 +104,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   records_header: {
-    marginBottom: 12,
+    fontWeight: 'bold',
     color: '#333',
     textAlign: 'center',
   },
   records_scrollArea: {
+    marginTop: 24,
     paddingBottom: 16,
     gap: 16,
   },

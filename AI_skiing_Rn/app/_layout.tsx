@@ -1,10 +1,7 @@
 import { useEffect } from 'react';
 import { Slot, useRouter } from 'expo-router';
 import { Provider as PaperProvider } from 'react-native-paper';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-
-
 
 export default function RootLayout() {
   const router = useRouter();

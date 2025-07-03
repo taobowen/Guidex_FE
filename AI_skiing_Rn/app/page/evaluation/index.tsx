@@ -121,7 +121,7 @@ export default function Evaluation() {
               <Card.Content>
                 <Text>{item.description}</Text>
                 <Text style={styles.error_frame}>
-                  {item.time || '-'} s
+                  {item.time} s
                 </Text>
               </Card.Content>
             </Card>
@@ -149,9 +149,8 @@ export default function Evaluation() {
               key={index}
               selected={tabValue === label}
               onPress={() => handleTabChange(label)}
-              style={styles.tab}
-              textStyle={{ color: themeColor }}
-              selectedColor={themeColor}
+              selectedColor={tabValue === label ? '#fff' : themeColor}
+              style={tabValue === label ? styles.selectedTab : styles.unselectedTab}
             >
               {label}
             </Chip>
@@ -178,6 +177,7 @@ export default function Evaluation() {
         buttonColor={themeColor} // previously "green"
         style={styles.button}
         contentStyle={{ height: 48 }}
+        textColor='#fff'
       >
         See Suggestions
       </Button>
@@ -260,11 +260,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     gap: 8,
   },
-  tab: {
+  unselectedTab: {
     marginRight: 8,
     borderColor: themeColor,
     borderWidth: 1,
     backgroundColor: '#fff',
+  },
+
+  selectedTab: {
+    marginRight: 8,
+    backgroundColor: themeColor,
+    borderColor: themeColor,
+    borderWidth: 1,
   },
   error_frame: {
     marginTop: 8,

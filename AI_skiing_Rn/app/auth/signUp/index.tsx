@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { StyleSheet, ScrollView } from 'react-native';
 import {
   TextInput,
   Button,
@@ -8,6 +8,8 @@ import {
 } from 'react-native-paper';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { GoogleSignin } from '@react-native-google-signin/google-signin'
 
 const themeColor = '#8fbff8';
 
@@ -66,6 +68,36 @@ export default function SignUp() {
     });
   };
 
+
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await GoogleSignin.hasPlayServices();
+      const response = await GoogleSignin.signIn();
+
+      if (response.type === 'success') {
+        await axios.post('https://aiskiingcoach.com/auth/google/token', {
+          idToken: response.data.idToken,
+        }).then(({ data }) => {
+          console.log('Google Sign-In data:', data);
+          if (data.code === 200) {
+            AsyncStorage.setItem('authToken', data.data.token).then(() => {
+              router.push('/page/video');
+            });
+          }
+          
+        }).catch((error) => {
+          console.error('Google Sign-In error:', error);
+          alert('Google Sign-In failed. Please try again.');
+        });
+      }
+    } catch (error) {
+      console.error('Google Sign-In error:', error);
+    }
+  };
+
+
+
   return (
     <ScrollView contentContainerStyle={styles.signUp_container}>
       <Text style={styles.signUp_title}>Sign Up</Text>
@@ -123,7 +155,7 @@ export default function SignUp() {
 
       <Button
         mode="outlined"
-        onPress={() => alert('Sign up with Google')}
+        onPress={handleGoogleSignIn}
         icon="google"
         style={styles.signUp_googleBtn}
         textColor={themeColor}
