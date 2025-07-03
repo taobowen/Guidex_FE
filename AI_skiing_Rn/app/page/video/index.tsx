@@ -71,13 +71,19 @@ export default function VideoUpload() {
       const formData = new FormData();
       const token = await AsyncStorage.getItem('authToken');
       setLoading(true);
-  
-      if (video.file) {
-        const fileBlob = new Blob([video.file], { type: video.mimeType || 'video/mp4' });
+
+      console.log('Uploading video:', video.uri);
+
+      if (video.uri) {
+        const fileBlob = new Blob([video.uri], { type: video.mimeType || 'video/mp4' });
         formData.append("videoFile", fileBlob, video.name || 'video.mp4');
+
+        console.log('Video file appended to formData:', video.name);
       } else {
         throw new Error('Video file is undefined.');
       }
+
+      console.log('FormData prepared:', formData);
   
       const { data } = await axios({
         method: 'POST',
@@ -87,6 +93,8 @@ export default function VideoUpload() {
         },
         data: formData,
       });
+
+      console.log('Upload response:', data);
   
       if (data.code === 200) {
         // const resultId = data.data.resultId;
@@ -95,7 +103,7 @@ export default function VideoUpload() {
         pollAnalysisResult(videoId, resultId);
       } else {
         setLoading(false);
-        Alert.alert('Error', 'Failed to upload video.');
+        Alert.alert('Error', `Failed to upload video. ${data.msg}`);
       }
     } catch (error) {
       setLoading(false);
