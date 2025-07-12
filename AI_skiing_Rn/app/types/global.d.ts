@@ -18,3 +18,27 @@ type RootStackParamList = {
     // Add other routes here as needed
 };
 
+// const CATEGORY = {
+//   SNOWBOARD: 0,
+//   SKI: 1,
+// }
+// // 0-General,1-AASI,2-BASI,3-CASI
+// const STANDARD = {
+//   GENERAL: 0,
+//   AASI: 1,
+//   BASI: 2,
+//   CASI: 3,
+//   CISA: 4, // Ski specific
+// };
+// // type: 0-Flow,1-Carving
+
+// const TYPE = {
+//   FLOW: 0,
+//   CARVING: 1,
+// };
+
+type CATEGORY = CATEGORY;
+
+type STANDARD = STANDARD;
+
+type TYPE = TYPE;

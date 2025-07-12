@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { BottomNavigation } from 'react-native-paper';
-import { Slot, useRouter, usePathname } from 'expo-router';
+import { useRouter, usePathname, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function PageLayout() {
@@ -46,7 +46,13 @@ export default function PageLayout() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Slot />
+        <Stack
+          screenOptions={{
+            headerShown: false,          // or true if you want default headers
+            gestureEnabled: true,        // ✅ enables back-swipe gesture
+            animation: 'slide_from_right',
+          }}
+        />
       </View>
 
       <BottomNavigation
@@ -82,7 +88,7 @@ const styles = StyleSheet.create({
   nav: {
     flexGrow: 0,
     flexShrink: 0,
-    flexBasis: 80,
-    height: 80,
+    flexBasis: 70,
+    height: 70,
   },
 });

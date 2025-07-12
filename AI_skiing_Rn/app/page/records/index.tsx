@@ -7,6 +7,10 @@ import axiosInstance from '../../utils/axiosInstance';
 
 const themeColor = '#8fbff8';
 
+export const screenOptions = {
+  gestureEnabled: false, // or false to disable
+};
+
 export default function Records() {
   const router = useRouter();
   const [recordList, setRecords] = React.useState([]);
@@ -45,8 +49,9 @@ export default function Records() {
         Consultation Records
       </Text>
 
-      <ScrollView contentContainerStyle={styles.records_scrollArea}>
-        {recordList.map((record, index) => (
+      <ScrollView contentContainerStyle={styles.records_scrollArea} style={styles.scroll_view}>
+        <View style={styles.records_scrollBox}>
+             {recordList.map((record, index) => (
           <Card key={index} style={styles.records_card} onPress={() => router.push(`/page/evaluation?resultId=${record.id}&videoId=${record.videoId}`)}>
             <Card.Title title={record.skiTitle} />
             <Card.Content>
@@ -91,6 +96,8 @@ export default function Records() {
             </Card.Content>
           </Card>
         ))}
+        </View>
+     
       </ScrollView>
     </View>
   );
@@ -98,6 +105,7 @@ export default function Records() {
 
 const styles = StyleSheet.create({
   records_container: {
+    height: '100%',
     flexShrink: 1,
     padding: 16,
     alignItems: 'center',
@@ -111,11 +119,23 @@ const styles = StyleSheet.create({
   records_scrollArea: {
     marginTop: 24,
     paddingBottom: 16,
+    flexGrow: 1,
     gap: 16,
+  },
+  scroll_view: {
+    width: '100%',
+  },
+  records_scrollBox: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 16,
+    width: '100%',
+    flexGrow: 1
   },
   records_card: {
     display: 'flex',
-    width: 350,
+    width: '90%',
     marginHorizontal: 8,
     borderRadius: 12,
     elevation: 3,

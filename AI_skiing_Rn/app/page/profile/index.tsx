@@ -55,6 +55,7 @@ const ProfilePage = () => {
 
   return (
     <View style={styles.profile_container}>
+      <Text style={styles.header}>Profile</Text>
       <Card style={styles.profile_card}>
         <View style={styles.profile_avatarContainer}>
           <Avatar.Image size={100} source={{ uri: avatar }} />
@@ -101,9 +102,14 @@ const ProfilePage = () => {
 export default ProfilePage;
 
 const styles = StyleSheet.create({
+  header: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    color: '#001c3c',
+  },
   profile_container: {
     flex: 1,
-    justifyContent: 'space-around',
     alignItems: 'center',
     paddingVertical: 20,
     backgroundColor: '#fff',

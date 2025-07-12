@@ -6,6 +6,9 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ScrollView, TouchableOpacity } from 'react-native-gesture-handler';
 import { MaterialIcons } from '@expo/vector-icons';
+import { CATEGORY, STANDARD, TYPE, CATEGORY_TEXT, STANDARD_TEXT, TYPE_TEXT } from '../../utils/const'; // Adjust the import path as necessary
+import * as FileSystem from 'expo-file-system';
+
 
 import axios from 'axios';
 
@@ -14,22 +17,22 @@ const themeColor = '#8fbff8'; // deep navy
 export default function VideoUpload() {
   const router = useRouter();
   const [video, setVideo] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
-  const [category, setCategory] = useState('Snowboard'); // default category
-  const [standard, setStandard] = useState('');
-  const [type, setType] = useState('');
+  const [category, setCategory] = useState<CATEGORY | null>(CATEGORY.SNOWBOARD); // default category
+  const [standard, setStandard] = useState<STANDARD | null>(STANDARD.GENERAL); // default standard
+  const [type, setType] = useState<TYPE | null>(TYPE.FLOW); // default type
 
-  const categoryOptions = ['Snowboard', 'Ski'];
+  const categoryOptions = [CATEGORY.SNOWBOARD, CATEGORY.SKI];
 
   const standardOptions = useMemo(() => {
-    if (category === 'Ski') {
-      return ['General', 'CISA'];
-    } else if (category === 'Snowboard') {
-      return ['General','CASI', 'AASI', 'BASI'];
+    if (category === CATEGORY.SNOWBOARD) {
+      return [STANDARD.GENERAL, STANDARD.CASI, STANDARD.AASI, STANDARD.BASI];
+    } else if (category === CATEGORY.SKI) {
+      return [STANDARD.GENERAL, STANDARD.CISA];
     }
     return [];
   }, [category]);
 
-  const typeOptions = ['Flow', 'Carving'];
+  const typeOptions = [TYPE.FLOW, TYPE.CARVING];
 
   const [videoName, setVideoName] = useState<string | null>(null);
 
@@ -75,8 +78,23 @@ export default function VideoUpload() {
       console.log('Uploading video:', video.uri);
 
       if (video.uri) {
-        const fileBlob = new Blob([video.uri], { type: video.mimeType || 'video/mp4' });
-        formData.append("videoFile", fileBlob, video.name || 'video.mp4');
+        const fileUri = video.uri;
+        const fileInfo = await FileSystem.getInfoAsync(fileUri);
+
+        if (!fileInfo.exists) {
+          throw new Error("File not found.");
+        }
+
+        const file = {
+          uri: fileUri,
+          name: video.name || 'video.mp4',
+          type: video.mimeType || 'video/mp4',
+        } as any;
+
+        formData.append('videoFile', file);
+        formData.append("category", category?.toString() || '');
+        formData.append("standard", standard?.toString() || '');
+        formData.append("type", type?.toString() || '');
 
         console.log('Video file appended to formData:', video.name);
       } else {
@@ -173,7 +191,7 @@ export default function VideoUpload() {
                 category === opt && styles.selectOptionSelected,
               ]}
             >
-              <Text style={{ color: category === opt ? '#fff' : '#333' }}>{opt}</Text>
+              <Text style={{ color: category === opt ? '#fff' : '#333' }}>{CATEGORY_TEXT[opt]}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -189,7 +207,7 @@ export default function VideoUpload() {
                 standard === opt && styles.selectOptionSelected,
               ]}
             >
-              <Text style={{ color: standard === opt ? '#fff' : '#333' }}>{opt}</Text>
+              <Text style={{ color: standard === opt ? '#fff' : '#333' }}>{STANDARD_TEXT[opt]}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -205,7 +223,7 @@ export default function VideoUpload() {
                 type === opt && styles.selectOptionSelected,
               ]}
             >
-              <Text style={{ color: type === opt ? '#fff' : '#333' }}>{opt}</Text>
+              <Text style={{ color: type === opt ? '#fff' : '#333' }}>{TYPE_TEXT[opt]}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -218,7 +236,7 @@ export default function VideoUpload() {
         />
         <Card.Content>
           <PaperText variant="bodyMedium" style={{ color: '#333' }}>
-            1. Format: mp4{'\n'}
+            1. Size: Maximum 100MB{'\n'}
             2. You must be clearly visible in the video
           </PaperText>
         </Card.Content>
@@ -253,13 +271,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
   },
   records_scrollArea: {
-    marginTop: 24,
     padding: 16,
     gap: 16,
   },
   videoUpload_heading: {
+    textAlign: 'center',
     fontWeight: 'bold',
-    marginTop: 16,
     marginBottom: 8,
     color: '#333',
   },

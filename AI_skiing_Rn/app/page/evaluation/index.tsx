@@ -143,7 +143,7 @@ export default function Evaluation() {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.tabBar}
       >
-        {['All', 'Edge Transitions', 'Center of Gravity', 'Body Coordination', 'Pole Usage', 'Stance Width'].map(
+        {['All', ...new Set(issues.map(issue => ISSUE_TYPES[issue.type]))].map(
           (label, index) => (
             <Chip
               key={index}
