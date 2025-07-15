@@ -5,6 +5,8 @@ import { useRouter } from 'expo-router';
 import axiosInstance from '../../utils/axiosInstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import LoadingOverlay from '../../../components/LoadingOverlay'; // adjust path if needed
+
 
 
 const themeColor = '#8fbff8'; // deep navy
@@ -14,9 +16,11 @@ const ProfilePage = () => {
   const [username, setUsername] = React.useState('');
   const [sex, setSex] = React.useState();
   const [avatar, setAvatar] = React.useState('https://via.placeholder.com/150');
+  const [loading, setLoading] = React.useState(false);
 
   const getProfile = async () => {
     const token = await AsyncStorage.getItem('authToken');
+    setLoading(true);
     axiosInstance({
       method: 'GET',
       url: 'https://aiskiingcoach.com/system/user/get-user',
@@ -26,10 +30,12 @@ const ProfilePage = () => {
       },
     }).then(({ data }) => {
       if (data.code === 200) {
-        setUsername(data.data.userName);
+        setUsername(data.data.nickName);
         setSex(data.data.sex);
         setAvatar(data.data.avatar);
       }
+    }).finally(() => {
+      setLoading(false);
     });
   };
 
@@ -39,6 +45,7 @@ const ProfilePage = () => {
 
   const handleLogout = async () => {
     const token = await AsyncStorage.getItem('authToken');
+    setLoading(true);
     axiosInstance({
       method: 'POST',
       url: 'https://aiskiingcoach.com/logout',
@@ -50,11 +57,14 @@ const ProfilePage = () => {
       AsyncStorage.removeItem('authToken').then(() => {
         router.push('/auth/signIn');
       });
+    }).finally(() => {
+      setLoading(false);
     });
   };
 
   return (
     <View style={styles.profile_container}>
+      <LoadingOverlay visible={loading} />
       <Text style={styles.header}>Profile</Text>
       <Card style={styles.profile_card}>
         <View style={styles.profile_avatarContainer}>

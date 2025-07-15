@@ -6,6 +6,8 @@ import axios from 'axios';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import * as ImageManipulator from 'expo-image-manipulator';
+import LoadingOverlay from '../../../../components/LoadingOverlay'; // adjust path if needed
+
 
 
 const themeColor = '#8fbff8'; // deep navy
@@ -16,18 +18,22 @@ const EditProfilePage = () => {
   const [username, setUsername] = useState('');
   const [sex, setSex] = useState('0');
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
-  const [menuVisible, setMenuVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
 
 
   useEffect(() => {
     const fetchProfile = async () => {
       const token = await AsyncStorage.getItem('authToken');
+      
       try {
+        setLoading(true);
         const { data } = await axios.get('https://aiskiingcoach.com/system/user/get-user', {
           headers: { Authorization: token },
+        }).finally(() => {
+          setLoading(false);
         });
         if (data.code === 200) {
-          setUsername(data.data.userName);
+          setUsername(data.data.nickName);
           setSex(data.data.sex);
           setAvatarUri(data.data.avatar);
         }
@@ -39,12 +45,15 @@ const EditProfilePage = () => {
   }, []);
 
   const pickAvatar = async () => {
+    setLoading(true);
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 1,
       base64: false,
+    }).finally(() => {
+      setLoading(false);
     });
-  
+
     if (!result.canceled) {
       const originalUri = result.assets[0].uri;
   
@@ -68,24 +77,10 @@ const EditProfilePage = () => {
     const token = await AsyncStorage.getItem('authToken');
   
     const formData = new FormData();
-    formData.append('userName', username);
+    formData.append('nickName', username);
     formData.append('sex', sex.toString());
   
     if (avatarUri) {
-      // if (Platform.OS === 'web') {
-      //   // Fetch the blob for browser upload
-      //   const res = await fetch(avatarUri);
-      //   const blob = await res.blob();
-  
-      //   formData.append('avatarFile', blob, 'avatar.jpg');
-      // } else {
-      //   const file = {
-      //     uri: avatarUri,
-      //     type: 'image/jpeg',
-      //     name: 'avatar.jpg',
-      //   } as any; // Cast to any to bypass type issues
-      //   formData.append('avatarFile', file);
-      // }
       const file = {
         uri: avatarUri,
         type: 'image/jpeg',
@@ -93,8 +88,11 @@ const EditProfilePage = () => {
       } as any; // Cast to any to bypass type issues
       formData.append('avatarFile', file);
     }
+
+    console.log('Form Data:', formData); // Debugging line
   
     try {
+      setLoading(true);
       const response = await axios.put(
         'https://aiskiingcoach.com/system/user/profile',
         formData,
@@ -104,8 +102,10 @@ const EditProfilePage = () => {
             'Content-Type': 'multipart/form-data',
           },
         }
-      );
-  
+      ).finally(() => {
+        setLoading(false);
+      });
+
       if (response.data.code === 200) {
         Alert.alert('Success', 'Profile updated.');
         router.back();
@@ -121,6 +121,7 @@ const EditProfilePage = () => {
 
   return (
     <View style={styles.editProfile_container}>
+      <LoadingOverlay visible={loading} />
       <Text variant="titleLarge" style={styles.editProfile_header}>Edit Profile</Text>
 
       <TouchableOpacity onPress={pickAvatar} style={styles.editProfile_avatarContainer}>

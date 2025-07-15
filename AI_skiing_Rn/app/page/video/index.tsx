@@ -8,6 +8,8 @@ import { ScrollView, TouchableOpacity } from 'react-native-gesture-handler';
 import { MaterialIcons } from '@expo/vector-icons';
 import { CATEGORY, STANDARD, TYPE, CATEGORY_TEXT, STANDARD_TEXT, TYPE_TEXT } from '../../utils/const'; // Adjust the import path as necessary
 import * as FileSystem from 'expo-file-system';
+import * as ImagePicker from 'expo-image-picker';
+
 
 
 import axios from 'axios';
@@ -44,25 +46,37 @@ export default function VideoUpload() {
 
   let pollTimer: NodeJS.Timeout;
 
-
   const handleFileUpload = async () => {
     try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: 'video/*',
-        copyToCacheDirectory: true,
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert('Permission required', 'Please allow access to your media library.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+        quality: 1,
       });
 
-      if (result.assets && result.assets.length > 0) {
+      if (!result.canceled && result.assets.length > 0) {
         const selectedVideo = result.assets[0];
-        setVideo(selectedVideo);
-        setVideoName(selectedVideo?.name);
-        console.log('Selected video:', selectedVideo);
+        const formatted = {
+          uri: selectedVideo.uri,
+          name: selectedVideo.fileName || 'video.mp4',
+          size: selectedVideo.fileSize || 0,
+          mimeType: 'video/mp4',
+        };
+        setVideo(formatted);
+        setVideoName(formatted.name);
+        console.log('Selected video from album:', formatted);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to pick a file.');
+      Alert.alert('Error', 'Failed to access album.');
       console.error(error);
     }
   };
+
 
   const handleGenerateSuggestion = async () => {
     if (!video) {

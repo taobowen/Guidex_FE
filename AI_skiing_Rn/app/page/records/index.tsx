@@ -4,6 +4,8 @@ import { Card, Text, Button, ProgressBar } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axiosInstance from '../../utils/axiosInstance';
+import EmptyStatus from '../../../components/EmptyStatus'; // Adjust path as needed
+import LoadingOverlay from '../../../components/LoadingOverlay'; // adjust path if needed
 
 const themeColor = '#8fbff8';
 
@@ -14,6 +16,8 @@ export const screenOptions = {
 export default function Records() {
   const router = useRouter();
   const [recordList, setRecords] = React.useState([]);
+  const [loading, setLoading] = React.useState(false);
+
 
   React.useEffect(() => {
     fetchRecords();
@@ -21,7 +25,10 @@ export default function Records() {
 
   const fetchRecords = async () => {
     // const token = await AsyncStorage.getItem('authToken');
-    const { data } = await axiosInstance.get('/system/results/list');
+    setLoading(true);
+    const { data } = await axiosInstance.get('/system/results/list').finally(() => {
+      setLoading(false);
+    });
 
     if (data.code === 200) {
       setRecords(data.rows);
@@ -30,11 +37,15 @@ export default function Records() {
 
   const handleDelete = async (recordId: number) => {
     const token = await AsyncStorage.getItem('authToken');
+    setLoading(true);
+
     const { data } = await axiosInstance.delete(`https://aiskiingcoach.com/system/results/delete/${recordId}`, {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': token,
       },
+    }).finally(() => {
+      setLoading(false);
     });
 
     if (data.code === 200) {
@@ -45,60 +56,73 @@ export default function Records() {
 
   return (
     <View style={styles.records_container}>
+      <LoadingOverlay visible={loading} />
+
       <Text variant="headlineMedium" style={styles.records_header}>
         Consultation Records
       </Text>
 
       <ScrollView contentContainerStyle={styles.records_scrollArea} style={styles.scroll_view}>
         <View style={styles.records_scrollBox}>
-             {recordList.map((record, index) => (
-          <Card key={index} style={styles.records_card} onPress={() => router.push(`/page/evaluation?resultId=${record.id}&videoId=${record.videoId}`)}>
-            <Card.Title title={record.skiTitle} />
-            <Card.Content>
 
-              { record.skiLocation && (
-                <Text variant="bodyMedium" style={styles.records_date}>
-                  {record.skiLocation}
-                </Text>
-              )}
-             
-              { record.skiTime && (
-                <Text variant="bodyMedium" style={styles.records_date}>
-                  { new Date(record.skiTime).toLocaleDateString()}
-                </Text>
-              )}
+          {recordList.length === 0 ? (
+            <EmptyStatus
+              message="You don't have any consultation records yet."
+            />
+          ) : (
+            <>
+              {recordList.map((record, index) => (
+                <Card key={index} style={styles.records_card} onPress={() => router.push(`/page/evaluation?resultId=${record.id}&videoId=${record.videoId}`)}>
+                  <Card.Title title={record.skiTitle} />
+                  <Card.Content>
 
-              <Text variant="bodyMedium" style={styles.records_issues}>
-                {record?.issues?.length || 0} issues detected
-              </Text>
+                    { record.skiLocation && (
+                      <Text variant="bodyMedium" style={styles.records_date}>
+                        {record.skiLocation}
+                      </Text>
+                    )}
+                  
+                    { record.skiTime && (
+                      <Text variant="bodyMedium" style={styles.records_date}>
+                        { new Date(record.skiTime).toLocaleDateString()}
+                      </Text>
+                    )}
 
-              <View style={styles.records_buttonRow}>
-                <Button
-                  mode="outlined"
-                  onPress={() => router.push(`/page/records/edit?resultId=${record.id}`)}
-                  style={styles.records_button}
-                  compact
-                  labelStyle={{ color: themeColor}}  
-                >
-                  Edit
-                </Button>
-                <Button
-                  mode="contained"
-                  buttonColor={themeColor}
-                  onPress={() => handleDelete(record.id)}
-                  style={styles.records_button}
-                  compact
-                  labelStyle={{ color: '#fff' }}
-                >
-                  Delete
-                </Button>
-              </View>
-            </Card.Content>
-          </Card>
-        ))}
+                    <Text variant="bodyMedium" style={styles.records_issues}>
+                      {record?.issues?.length || 0} issues detected
+                    </Text>
+
+                    <View style={styles.records_buttonRow}>
+                      <Button
+                        mode="outlined"
+                        onPress={() => router.push(`/page/records/edit?resultId=${record.id}`)}
+                        style={styles.records_button}
+                        compact
+                        labelStyle={{ color: themeColor}}  
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        mode="contained"
+                        buttonColor={themeColor}
+                        onPress={() => handleDelete(record.id)}
+                        style={styles.records_button}
+                        compact
+                        labelStyle={{ color: '#fff' }}
+                      >
+                        Delete
+                      </Button>
+                    </View>
+                  </Card.Content>
+                </Card>
+              ))}
+            </>
+            )}
         </View>
-     
       </ScrollView>
+
+
+      
     </View>
   );
 }
