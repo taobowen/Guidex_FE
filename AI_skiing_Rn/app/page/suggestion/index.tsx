@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
 import { ScrollView, View, Image, StyleSheet } from 'react-native';
-import { Text, Card, Chip, IconButton } from 'react-native-paper';
+import { Text, Card, Chip, IconButton, Button } from 'react-native-paper';
 import { useLocalSearchParams } from 'expo-router';
 import {ISSUE_TYPES} from '@/app/utils/const';
-
+import LoadingOverlay from '../../../components/LoadingOverlay'; // adjust path if needed
 
 
 import axiosInstance from '@/app/utils/axiosInstance';
@@ -13,6 +13,7 @@ const themeColor = '#8fbff8';
 export default function Suggestions() {
   const [suggestions, setSuggestions] = React.useState([]);
   const [tabValue, setTabValue] = React.useState('All');
+  const [loading, setLoading] = React.useState(false);
 
   const showSuggestions = useMemo(() => {
     return suggestions.filter((item) => {
@@ -36,6 +37,7 @@ export default function Suggestions() {
 
   const fetchSuggestions = async () => {
     try {
+      setLoading(true);
       const response = await axiosInstance.get(`/system/results/${resultId}`);
       const data = response.data;
       if (data.code === 200) {
@@ -46,11 +48,14 @@ export default function Suggestions() {
           thumb: issue.thumb,
           image: issue.coverUrl || 'https://via.placeholder.com/150', // Default image if none provided
         })));
+        setLoading(false);
       } else {
         console.error('Error fetching suggestions:', data.message);
+        setLoading(false);
       }
     } catch (error) {
       console.error('Error fetching suggestions:', error);
+      setLoading(false);
     }
   };
 
@@ -83,6 +88,19 @@ export default function Suggestions() {
     // Handle thumb down action here
   };
 
+  // const handleRequestCoach = async (recordId: string) => {
+  //   // Navigate to the request coach page
+  //   setLoading(true);
+  //   const response = await axiosInstance.put(`/system/results/inquire-coach/${recordId}`);
+  //   if (response.data.code === 200) {
+  //       setLoading(false);
+  //       alert('Coach request sent successfully!');
+  //     } else {
+  //       setLoading(false);
+  //       alert('Failed to send coach request. Please try again.');
+  //     }
+  // };
+
 
   React.useEffect(() => {
     fetchSuggestions();
@@ -90,6 +108,7 @@ export default function Suggestions() {
 
   return (
     <View style={styles.suggestions_container}>
+      <LoadingOverlay visible={loading} />
       <Text variant="headlineMedium" style={styles.suggestions_header}>
         Feedback
       </Text>
@@ -140,6 +159,17 @@ export default function Suggestions() {
         ))}
 
       </ScrollView>
+      {/* <Button
+        icon="arrow-right"
+        mode="contained"
+        onPress={() => handleRequestCoach(resultId)}
+        buttonColor={themeColor} // previously "green"
+        style={styles.button}
+        contentStyle={{ height: 48 }}
+        textColor='#fff'
+      >
+        Request Coach
+      </Button> */}
     </View>
   );
 }
@@ -214,6 +244,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-start',
     marginTop: 8,
-  }
+  },
+  button: {
+    marginTop: 20,
+    width: '100%',
+  },
 
 });

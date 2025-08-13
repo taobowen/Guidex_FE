@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { View, StyleSheet, Alert, Text } from 'react-native';
+import React, { useMemo, useState, useRef } from 'react';
+import { View, StyleSheet, Alert, Text, Image } from 'react-native';
 import { Button, Card, Text as PaperText } from 'react-native-paper';
 import * as DocumentPicker from 'expo-document-picker';
 import { useRouter } from 'expo-router';
@@ -9,12 +9,13 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { CATEGORY, STANDARD, TYPE, CATEGORY_TEXT, STANDARD_TEXT, TYPE_TEXT } from '../../utils/const'; // Adjust the import path as necessary
 import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
-
-
+import * as Mime from 'react-native-mime-types';
+import * as VideoThumbnails from 'expo-video-thumbnails';
+import axiosInstance from '../../utils/axiosInstance';
 
 import axios from 'axios';
 
-const themeColor = '#8fbff8'; // deep navy
+const themeColor = '#8fbff8'; // deep uo
 
 export default function VideoUpload() {
   const router = useRouter();
@@ -22,6 +23,10 @@ export default function VideoUpload() {
   const [category, setCategory] = useState<CATEGORY | null>(CATEGORY.SNOWBOARD); // default category
   const [standard, setStandard] = useState<STANDARD | null>(STANDARD.GENERAL); // default standard
   const [type, setType] = useState<TYPE | null>(TYPE.FLOW); // default type
+  const [thumbnailUri, setThumbnailUri] = useState<string | null>(null);
+  const [progress, setProgress] = useState<number>(0);
+  const [showProgress, setShowProgress] = useState<boolean>(false);
+  const [videoId, setVideoId] = useState<string | null>(null);
 
   const categoryOptions = [CATEGORY.SNOWBOARD, CATEGORY.SKI];
 
@@ -36,45 +41,73 @@ export default function VideoUpload() {
 
   const typeOptions = [TYPE.FLOW, TYPE.CARVING];
 
-  const [videoName, setVideoName] = useState<string | null>(null);
-
   const [loading, setLoading] = useState(false);
 
   const disabledUploadBtn = useMemo(() => {
     return !video || loading || type === '' || standard === '' || category === '';
   }, [video, loading, type, standard, category]);
 
-  let pollTimer: NodeJS.Timeout;
+  const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const getProfile = async () => {
+    const token = await AsyncStorage.getItem('authToken');
+    axiosInstance({
+      method: 'GET',
+      url: 'https://aiskiingcoach.com/system/user/get-user',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token,
+      },
+    })
+  };
+
+  React.useEffect(() => {
+    getProfile();
+  }, []);
+
 
   const handleFileUpload = async () => {
-    try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
       if (!permission.granted) {
         Alert.alert('Permission required', 'Please allow access to your media library.');
         return;
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+        mediaTypes: ['videos'],
         quality: 1,
+        allowsEditing: true,
+        videoExportPreset: ImagePicker.VideoExportPreset.MediumQuality,
       });
 
       if (!result.canceled && result.assets.length > 0) {
         const selectedVideo = result.assets[0];
+        
+        // Get file extension to determine proper mime type
+        const fileExtension = selectedVideo.uri.split('.').pop()?.toLowerCase();
+
+        // Optionally get MIME type
+        const mimeType = Mime.lookup(selectedVideo.uri);    
         const formatted = {
           uri: selectedVideo.uri,
-          name: selectedVideo.fileName || 'video.mp4',
+          name: selectedVideo.fileName || `video.${fileExtension || 'mp4'}`,
           size: selectedVideo.fileSize || 0,
-          mimeType: 'video/mp4',
+          mimeType: mimeType,
         };
         setVideo(formatted);
-        setVideoName(formatted.name);
         console.log('Selected video from album:', formatted);
+
+        try {
+          const { uri: thumbnail } = await VideoThumbnails.getThumbnailAsync(selectedVideo.uri, {
+            time: 1000,
+          });
+          setThumbnailUri(thumbnail);
+        } catch (e) {
+          console.warn("Failed to generate thumbnail", e);
+        }
+
       }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to access album.');
-      console.error(error);
-    }
   };
 
 
@@ -88,8 +121,7 @@ export default function VideoUpload() {
       const formData = new FormData();
       const token = await AsyncStorage.getItem('authToken');
       setLoading(true);
-
-      console.log('Uploading video:', video.uri);
+      setShowProgress(true);
 
       if (video.uri) {
         const fileUri = video.uri;
@@ -114,8 +146,6 @@ export default function VideoUpload() {
       } else {
         throw new Error('Video file is undefined.');
       }
-
-      console.log('FormData prepared:', formData);
   
       const { data } = await axios({
         method: 'POST',
@@ -125,20 +155,21 @@ export default function VideoUpload() {
         },
         data: formData,
       });
-
-      console.log('Upload response:', data);
   
       if (data.code === 200) {
-        // const resultId = data.data.resultId;
         const videoId = data.data.videoId;
         const resultId = data.data.resultId;
+        setVideoId(videoId);
+        setProgress(0);
         pollAnalysisResult(videoId, resultId);
       } else {
         setLoading(false);
+        setShowProgress(false);
         Alert.alert('Error', `Failed to upload video. ${data.msg}`);
       }
     } catch (error) {
       setLoading(false);
+      setShowProgress(false);
       console.error('Upload error:', error);
       Alert.alert('Error', 'Failed to upload video.');
     }
@@ -149,32 +180,62 @@ export default function VideoUpload() {
     try {
       const token = await AsyncStorage.getItem('authToken');
   
-      pollTimer = setInterval(async () => {
+      pollTimerRef.current = setInterval(async () => {
         const res = await axios.get(`https://aiskiingcoach.com/system/video/${videoId}`, {
           headers: { Authorization: token },
         });
   
         if (res.data.code === 200) {
+          const percent = res.data.data.progress || 0;
+          setProgress(percent); // Update progress bar
+
           if (res.data.data.status === 2) {
-            clearInterval(pollTimer);
+            if (pollTimerRef.current) {
+              clearInterval(pollTimerRef.current);
+              pollTimerRef.current = null;
+            }
+
             setLoading(false);
+            setShowProgress(false);
             router.push(`/page/evaluation?resultId=${resultId}&videoId=${videoId}`);
           } else if (res.data.data.status === 3) {
-            clearInterval(pollTimer);
+            if (pollTimerRef.current) {
+              clearInterval(pollTimerRef.current);
+              pollTimerRef.current = null;
+            }
             setLoading(false);
+            setShowProgress(false);
             Alert.alert('Error', 'Video analysis failed.');
           }
         }
       }, 2000); // every 3 seconds
     } catch (err) {
-      clearInterval(pollTimer);
+      if (pollTimerRef.current) {
+        clearInterval(pollTimerRef.current);
+        pollTimerRef.current = null;
+      }
       setLoading(false);
+      setShowProgress(false);
       Alert.alert('Error', 'Polling failed');
       console.error(err);
     }
   };
-  
 
+  const handleAnalyzeCancel = async () => {
+    await axiosInstance.put(`/system/video/cancel/${videoId}`).then(() => {
+      console.log('Analysis canceled successfully');
+      if (pollTimerRef.current) {
+        clearInterval(pollTimerRef.current);
+        pollTimerRef.current = null;
+      }
+      setShowProgress(false);
+      setLoading(false);
+      Alert.alert('Canceled', 'Analysis has been canceled.');
+    }).catch((error) => {
+      Alert.alert('Error', 'Failed to cancel analysis.', error?.message);
+    });
+  };
+  
   return (
     <ScrollView contentContainerStyle={styles.records_scrollArea}>
       <PaperText variant="headlineMedium" style={styles.videoUpload_heading}>
@@ -182,16 +243,22 @@ export default function VideoUpload() {
       </PaperText>
 
       <View style={styles.videoUpload_uploadWrapper}>
-
         <TouchableOpacity style={styles.videoUpload_uploadZone} onPress={handleFileUpload}>
-          <MaterialIcons name="upload-file" size={40} color="#333" />
-          <Text style={styles.videoUpload_uploadText}>Tap to Upload Video</Text>
+          {thumbnailUri ? (
+            <Image
+              source={{ uri: thumbnailUri }}
+              style={styles.videoUpload_uploadImage}
+              resizeMode="cover"
+            />
+          ) : (
+          <>
+            <MaterialIcons name="upload-file" size={40} color="#333" />
+            <Text style={styles.videoUpload_uploadText}>Tap to Upload Video</Text>
+          </>
+          )}
+          
         </TouchableOpacity>
       </View>
-
-      {videoName && (
-        <Text style={styles.videoUpload_fileName}>Uploaded: {videoName}</Text>
-      )}
 
       <View style={{ width: '100%', gap: 16 }}>
         <Text style={{ fontWeight: '600', color: '#333' }}>Category</Text>
@@ -271,6 +338,28 @@ export default function VideoUpload() {
       >
         {loading ? 'Analyzing...' : 'Analyze Video'}
       </Button>
+
+      {showProgress && (
+        <View style={styles.mask}>
+          <View style={styles.progressWrapper}>
+            <Text style={styles.progressText}>
+              Analyzing... {progress}%{'\n'}
+              High quality or large videos may take longer. Please wait patiently.
+            </Text>
+            <View style={styles.progressBarContainer}>
+              <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
+            </View>
+            <Button
+              mode="outlined"
+              onPress={handleAnalyzeCancel}
+              style={styles.cancelButton}
+            >
+              Cancel
+            </Button>
+          </View>
+        </View>
+      )}
+
     </ScrollView>
   );
 }
@@ -298,11 +387,6 @@ const styles = StyleSheet.create({
     width: '100%',
     borderColor: '#333',
   },
-  videoUpload_fileName: {
-    marginTop: 12,
-    fontStyle: 'italic',
-    color: '#333',
-  },
   videoUpload_card: {
     width: '100%',
     marginTop: 16,
@@ -310,6 +394,11 @@ const styles = StyleSheet.create({
   },
   videoUpload_uploadWrapper: {
     width: '100%',
+  },
+  videoUpload_uploadImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
   },
   videoUpload_uploadZone: {
     width: '100%',
@@ -321,7 +410,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#f0f4f8',
-    padding: 16,
+    padding: 4,
   },
   videoUpload_uploadText: {
     marginTop: 12,
@@ -359,6 +448,49 @@ const styles = StyleSheet.create({
   selectOptionSelected: {
     backgroundColor: themeColor,
     borderColor: themeColor,
+  },
+  progressWrapper: {
+    marginTop: 16,
+    width: '100%',
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    alignItems: 'center',
+    gap: 12,
+  },
+  progressText: {
+    textAlign: 'center',
+    fontSize: 14,
+    color: '#333',
+  },
+  progressBarContainer: {
+    height: 12,
+    width: '100%',
+    backgroundColor: '#eee',
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: themeColor,
+  },
+  cancelButton: {
+    marginTop: 8,
+    borderColor: '#888',
+  },
+  mask: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 999,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
   },
 
 });

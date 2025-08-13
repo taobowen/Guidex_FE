@@ -38,8 +38,8 @@ export default function Welcome() {
   return (
     <View style={styles.welcome_container}>
       <Animated.View style={{ opacity: fadeAnim, alignItems: 'center' }}>
-        <Text style={styles.welcome_appName}>Edge</Text>
-        <Text style={styles.welcome_subtitle}>AI Skiing Coach</Text>
+        <Text style={styles.welcome_appName}>Guidex</Text>
+        <Text style={styles.welcome_subtitle}>Your Personal AI Skiing Coach</Text>
       </Animated.View>
     </View>
   );
