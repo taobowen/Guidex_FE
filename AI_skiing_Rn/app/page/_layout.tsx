@@ -28,18 +28,24 @@ export default function PageLayout() {
       title: 'Profile',
       focusedIcon: 'account-circle', unfocusedIcon: 'account-circle-outline'
     },
+    {
+      key: 'request',
+      title: 'Request',
+      focusedIcon: 'account-circle', unfocusedIcon: 'account-circle-outline'
+    },
   ];
 
   useEffect(() => {
     if (pathname.includes('/page/video')) setIndex(0);
     else if (pathname.includes('/page/records')) setIndex(1);
     else if (pathname.includes('/page/profile')) setIndex(2);
+    else if (pathname.includes('/page/request')) setIndex(3);
   }, [pathname]);
 
   const handleIndexChange = (newIndex: number) => {
     setIndex(newIndex);
     const selected = routes[newIndex].key;
-    const validPaths = `/page/${selected}` as '/page/video' | '/page/records' | '/page/profile';
+    const validPaths = `/page/${selected}` as '/page/video' | '/page/records' | '/page/profile' | '/page/request';
     router.push(validPaths);
   };
 

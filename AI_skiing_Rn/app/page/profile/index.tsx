@@ -62,6 +62,20 @@ const ProfilePage = () => {
     });
   };
 
+  // const handleRegisterAsCoach = () => {
+  //   setLoading(true);
+  //   axiosInstance({
+  //     method: 'PUT',
+  //     url: 'https://aiskiingcoach.com/system/user/profile/register-as-coach',
+  //   }).then(() => {
+  //     AsyncStorage.removeItem('authToken').then(() => {
+  //       router.push('/auth/signIn');
+  //     });
+  //   }).finally(() => {
+  //     setLoading(false);
+  //   });
+  // };
+
   return (
     <View style={styles.profile_container}>
       <LoadingOverlay visible={loading} />
@@ -104,6 +118,16 @@ const ProfilePage = () => {
       >
         Log Out
       </Button>
+
+      {/* <Button
+        mode="contained"
+        buttonColor={themeColor}
+        textColor="#fff"
+        style={styles.profile_logoutButton}
+        onPress={handleRegisterAsCoach}
+      >
+        Register As Coach
+      </Button> */}
     </View>
 
   );

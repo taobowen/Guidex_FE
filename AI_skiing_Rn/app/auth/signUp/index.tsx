@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { StyleSheet, ScrollView } from 'react-native';
+import { StyleSheet, ScrollView, View } from 'react-native';
 import {
   TextInput,
   Button,
   Text,
   Divider,
+  RadioButton
 } from 'react-native-paper';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
@@ -17,6 +18,8 @@ export default function SignUp() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  // const [role, setRole] = useState('student');
+
   const router = useRouter();
 
   const [nameError, setNameError] = useState('');
@@ -57,6 +60,7 @@ export default function SignUp() {
       username: name,
       email,
       password,
+      // role,
     }).then(({ data }) => {
       if (data.code === 500) {
         alert('User already exists');
@@ -140,6 +144,19 @@ export default function SignUp() {
       {passwordError ? (
         <Text style={styles.signUp_error}>{passwordError}</Text>
       ) : null}
+
+      {/* <Text style={{ marginTop: 16, fontSize: 16, fontWeight: 'bold' }}>Select Your Role</Text>
+      <RadioButton.Group onValueChange={setRole} value={role}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+          <RadioButton value="student" />
+          <Text>Student</Text>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+          <RadioButton value="coach" />
+          <Text>Coach</Text>
+        </View>
+      </RadioButton.Group>
+ */}
 
       <Button
         mode="contained"

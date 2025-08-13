@@ -16,6 +16,8 @@ export default function Index() {
       <Link href="/page/video">
         <VideoUpload />
       </Link>
+      {/* <Link>
+      </Link> */}
     </View>
   );
 }
