@@ -13,22 +13,22 @@ export default function GoogleLoginBtn() {
       await GoogleSignin.hasPlayServices();
       const response = await GoogleSignin.signIn();
 
-      // if (response.type === 'success') {
-      //   await axios.post('https://aiskiingcoach.com/auth/google/token', {
-      //     idToken: response.data.idToken,
-      //   }).then(({ data }) => {
-      //     console.log('Google Sign-In data:', data);
-      //     if (data.code === 200) {
-      //       AsyncStorage.setItem('authToken', data.data.token).then(() => {
-      //         router.push('/page/video');
-      //       });
-      //     }
+      if (response.type === 'success') {
+        await axios.post('https://aiskiingcoach.com/auth/google/token', {
+          idToken: response.data.idToken,
+        }).then(({ data }) => {
+          console.log('Google Sign-In data:', data);
+          if (data.code === 200) {
+            AsyncStorage.setItem('authToken', data.data.token).then(() => {
+              router.push('/page/video');
+            });
+          }
           
-      //   }).catch((error) => {
-      //     console.error('Google Sign-In error:', error);
-      //     alert('Google Sign-In failed. Please try again.');
-      //   });
-      // }
+        }).catch((error) => {
+          console.error('Google Sign-In error:', error);
+          alert('Google Sign-In failed. Please try again.');
+        });
+      }
     } catch (error) {
       console.error('Google Sign-In error:', error);
     }
