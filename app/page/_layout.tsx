@@ -43,8 +43,8 @@ export default function PageLayout() {
   useEffect(() => {
     if (pathname.includes('/page/video')) setIndex(0);
     else if (pathname.includes('/page/records')) setIndex(1);
-    else if (pathname.includes('/page/profile')) setIndex(2);
-    else if (pathname.includes('/page/coach/request')) setIndex(3);
+    else if (pathname.includes('/page/profile')) setIndex(0);
+    else if (pathname.includes('/page/request')) setIndex(1);
   }, [pathname]);
 
   const handleIndexChange = (newIndex: number) => {
